@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b922eb7e-a0ba-4f77-8a55-f2b228685172" name="Default Changelist" comment="" />
+    <list default="true" id="b922eb7e-a0ba-4f77-8a55-f2b228685172" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/images/java并发编程学习笔记.md" beforeDir="false" afterPath="$PROJECT_DIR$/images/java并发编程学习笔记.md" afterDir="false" />
+    </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -29,11 +32,25 @@
       <find>tryAcquireShared</find>
       <find>tryAcquire</find>
       <find>condition</find>
+      <find>###1</find>
+      <find>###2</find>
+      <find>./</find>
+      <find>###3</find>
+      <find>###4</find>
+      <find>Alt text</find>
+      <find>images</find>
     </findStrings>
     <replaceStrings>
       <replace>instance</replace>
       <replace>waitList</replace>
       <replace>lockBy</replace>
+      <replace>### 1</replace>
+      <replace>### 2</replace>
+      <replace>images/</replace>
+      <replace>### 3</replace>
+      <replace>### 4</replace>
+      <replace>让优秀成为一种习惯！</replace>
+      <replace>.</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -84,6 +101,7 @@
         <option value="$PROJECT_DIR$/src/com/smile/thread/communication/Semaphore_communication.java" />
         <option value="$PROJECT_DIR$/src/com/smile/thread/communication/Exchanger_communication.java" />
         <option value="$PROJECT_DIR$/src/com/smile/thread/communication/Cyclic_communication.java" />
+        <option value="$PROJECT_DIR$/images/java并发编程学习笔记.md" />
       </list>
     </option>
   </component>
@@ -223,12 +241,12 @@
       <workItem from="1558748257930" duration="6450000" />
       <workItem from="1558760424299" duration="3105000" />
       <workItem from="1558771858210" duration="4691000" />
-      <workItem from="1558778398688" duration="241000" />
+      <workItem from="1558778398688" duration="2055000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="74572000" />
+    <option name="totallyTimeSpent" value="76386000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
@@ -292,13 +310,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://C:/Program Files/Java/jdk1.8.0_144/src.zip!/java/util/stream/Stream.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="181">
-          <caret line="497" column="9" selection-start-line="497" selection-start-column="9" selection-end-line="497" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/smile/thread/createThread/Lambda.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
@@ -846,6 +857,16 @@
             <element signature="e#1383#1384#0" expanded="true" />
             <element signature="e#1455#1456#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/images/java并发编程学习笔记.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="361">
+            <caret line="397" column="1" lean-forward="true" selection-end-line="412" />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
     </entry>
