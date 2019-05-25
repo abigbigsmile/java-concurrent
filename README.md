@@ -5,9 +5,9 @@
 
 ### 1.1	并发编程的学习
 
-* 	***并发编程API的熟练使用***
-* 	***并发编程API的实现原理***
-*	***理解java虚拟机的内存模型***
+* ***并发编程API的熟练使用***
+* ***并发编程API的实现原理***
+* ***理解java虚拟机的内存模型***
 * ***了解操作系统对并发的支持***
 
 ### 1.2	并发编程的必要性
@@ -75,7 +75,7 @@ https://blog.csdn.net/huangshulang1234/article/details/79158306
 
 ### 2.4 javap –verbose ***.class 反编译，查看class文件的字节码
 
-###2.5 synchronized原理和使用
+### 2.5 synchronized原理和使用
 			https://www.cnblogs.com/paddix/p/5367116.html
 
 内置锁（互斥）
@@ -120,15 +120,15 @@ Java偏向锁(Biased Locking)是Java6引入的一项多线程优化。它通过�
 （4）如果这个更新动作成功了，那么这个线程就拥有了该对象的锁，并且对象Mark Word的锁标志位设置为“00”，即表示此对象处于轻量级锁定状态
 5）如果这个更新操作失败了，说明多个线程竞争锁，轻量级锁就要膨胀为重量级锁
 
-###2.7 单例模式和多线程安全（这个看一看项目练习）
+### 2.7 单例模式和多线程安全（这个看一看项目练习）
 
 恶汉模式不会出现线程安全问题（因为即使在多线程下，没有出现对共享资源的非原子性操作）
 
-###2.8 可重入锁（避免死锁）
+### 2.8 可重入锁（避免死锁）
 
 当一个线程得到一个对象锁后，再次请求此对象锁时是可以再次得到该对象的锁。这也证明在一个Synchronized方法/块的内部调用本类的其他Synchronized方法/块时候，是永远可以得到锁的。
 
-###2.9 volitile关键字（比synchronized更轻量化，实现资源对多线程的可见性）
+### 2.9 volitile关键字（比synchronized更轻量化，实现资源对多线程的可见性）
 可见性：当一个线程修改了共享变量的值，另一个线程能够读到这个共享变量修改后的值
 
 1.volatile关键字的两层语义
@@ -146,7 +146,7 @@ Java偏向锁(Biased Locking)是Java6引入的一项多线程优化。它通过�
 
 缓存一致性协议。最出名的就是Intel 的MESI协议，MESI协议保证了每个缓存中使用的共享变量的副本是一致的。它核心的思想是：当CPU写数据时，如果发现操作的变量是共享变量，即在其他CPU中也存在该变量的副本，会发出信号通知其他CPU将该变量的缓存行置为无效状态，因此当其他CPU需要读取这个变量时，发现自己缓存中缓存该变量的缓存行是无效的，那么它就会从内存重新读取
 
-###3.0 JDK提供的原子类及其原理
+### 3.0 JDK提供的原子类及其原理
 
 原子更新基本类型
 原子更新数组
@@ -172,7 +172,7 @@ Java偏向锁(Biased Locking)是Java6引入的一项多线程优化。它通过�
 非阻塞同步：
 在并发环境下，某个线程对共享变量先进行操作，如果没有其他线程争用共享数据那操作就成功；如果存在数据的争用冲突，那就才去补偿措施，比如不断的重试机制，直到成功为止，因为这种乐观的并发策略不需要把线程挂起，也就把这种同步操作称为非阻塞同步（操作和冲突检测具备原子性）。
 
-###3.1 Lock接口
+### 3.1 Lock接口
 
 synchronized的缺陷：
 当一个线程获得锁，其它线程只能等待，直到获得锁的线程释放锁。而释放锁只能是两种情况：
@@ -183,7 +183,7 @@ synchronized的缺陷：
  
 
 
-###3.2 AbstractQueuedSynchronizer（重要）
+### 3.2 AbstractQueuedSynchronizer（重要）
 在java.util.concurrent.locks包中，作为提供一个框架，用于实现依赖先进先出（FIFO）等待队列的阻塞锁和相关同步器。
 反正辅助ReentrantLock的实现：
 阅读源码，探究ReentrantLock的lock()和unlock()的实现原理：（与自己实现可冲入锁的原理非常类似）
@@ -203,11 +203,11 @@ acquireQueued的主要作用是把已经追加到队列的线程节点（addWait
  
  
 
-###3.3 公平锁
+### 3.3 公平锁
 参考前面的FairSync和UnfairSync同步器源码，主要区别就是在实现上多了一个判断hasQueuedPredecessors()：判断等待队列中有没有比当前请求线程更前的结点。（等待队列就是一个FIFO队列）
  
 
-###3.4 读写锁
+### 3.4 读写锁
 
 我们通过分析ReentrantReadWriteLock源码来分析读写锁。
 注意：里面的锁的实现都是委托同步器实现的，而同步器又是通过继承AQS实现（AbstractQueuedSynchronized）实现，所以最终要的是看AQS中的tryAcquire()、tryAcqureiShared()、tryRelease()、tryReleaseShared()方法的实现
@@ -235,7 +235,7 @@ readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c +
 而HoldCounter是用ThreadLocal进行存储，保证安全性
 
 
-###3.5 锁降级和锁升级
+### 3.5 锁降级和锁升级
 
 **锁降级**：将写锁降级为读锁
 即当前线程在写锁没有释放的时候，获取读锁，再释放写锁
@@ -255,7 +255,7 @@ readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c +
 这里说的【数据的可见性】并不是说内存可见性问题，而是指写锁操作的数据结果，对同一个方法里的读锁读取的时候不可见。假设线程A修改了数据，释放了写锁，这个时候线程T获得了写锁，修改了数据，然后也释放了写锁，线程A读取数据的时候，读到的是线程T修改的，并不是线程A自己修改的，那么在使用修改后的数据时，就会出现错误的结果。书上说的【当前线程无法感知线程T的数据更新】，是说线程A使用数据时，并不知道别的线程已经更改了数据，所以使用的是错误的结果。
 
 
-###3.6 线程安全总结
+### 3.6 线程安全总结
  
 	有什么锁？
 偏向锁
@@ -269,14 +269,14 @@ readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c +
 公平锁
 非公平锁
 
-###3.7 线程间的通信
+### 3.7 线程间的通信
 wait()：必须在同步块之中，或者synchronized修饰的方法中，执行完之后会释放对象锁
 notify():随机从等待队列中唤醒一个线程
 notifyAll()：唤醒全部等待线程，也要在同步K块中，并且有锁对象调用
 应用场景：生产者消费者问题中出现
 
 
-###3.8 Condition源码分析（https://javadoop.com/2017/07/20/AbstractQueuedSynchronizer-2/）
+### 3.8 Condition源码分析（https://javadoop.com/2017/07/20/AbstractQueuedSynchronizer-2/）
 Condition：
 线程之间除了同步互斥，还要考虑通信。在Java5之前我们的通信方式为：wait 和 notify。Condition的优势是支持多路等待，即可以定义多个Condition，每个condition控制线程的一条执行通路。传统方式只能是一路等待
 Condition提供不同于Object 监视器方法的行为和语义，如受保证的通知排序，或者在执行通知时不需要保持一个锁。
@@ -315,7 +315,7 @@ Condition实例实质上被绑定到一个锁上。一个锁内部可以有多�
 3.	每个 condition 有一个关联的条件队列，如线程 1 调用 condition1.await() 方法即可将当前线程 1 包装成 Node 后加入到条件队列中，然后阻塞在这里，不继续往下执行，条件队列是一个单向链表；
 4.	调用condition1.signal() 触发一次唤醒，此时唤醒的是队头，会将condition1 对应的条件队列的 firstWaiter（队头） 移到阻塞队列的队尾，等待获取锁，获取锁后 await 方法才能返回，继续往下执行。
 
-###3.9 并发工具类使用以及源码分析
+### 3.9 并发工具类使用以及源码分析
 
 CountDownLatch
 CyclicBarrier
@@ -335,7 +335,7 @@ while (!isOnSyncQueue(node)) {
 接下来，// 被唤醒后，将进入阻塞队列，等待获取锁
 即退出了while (!isOnSyncQueue(node))循环
 
-###4.0 join()
+### 4.0 join()
 
 join():当前线程等待调用join()的线程执行完毕再往下执行
 查看join()的源码：
@@ -351,7 +351,7 @@ Thread.join其实底层是通过wait/notifyall来实现线程的通信达到线�
 既然A调用B线程的join，那为什么A会被阻塞？
 因为，A中调用B线程的join的时候，当前运行的线程是A而不是B,这个时候可以这么理解，把join看成其它方法比如test方法，A调用B的test的时候B就是一个普通对象，并不是说B线程去执行join方法，还是A线程在执行B的join方法，然后再去调用wait方法，从而A线程进入等待状态。
 
-###4.1 ThreadLocal
+### 4.1 ThreadLocal
 相当于线程的局部变量，每个线程都有，所以线程安全。
 分析ThreadLocal的源码：
 首先我们主要关注其中的get()、set(T value)、setInitialValue()
