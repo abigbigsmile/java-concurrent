@@ -1,7 +1,4 @@
-# java-concurrent
-
-
-# java并发编程学习笔记
+#java并发编程学习笔记
 
 ### 1.1	并发编程的学习
 
@@ -12,7 +9,8 @@
 
 ### 1.2	并发编程的必要性
  
- ![并发编程的必要性](images/image.png)
+ ![让优秀成为一种习惯！](images/1558778953413.png)
+
 
 ### 1.3	多线程和并发
 * 多线程：多个执行流，顺序切换执行（不是同一时刻执行，只是切换速度快）
@@ -20,10 +18,15 @@
 
 ### 1.4	进程和线程
 
+![让优秀成为一种习惯！](images/1558778982694.png)
+
 ### 1.5	java并发编程书籍
- ![Alt text](./1558777496365.png)
+ ![让优秀成为一种习惯！](images/1558777496365.png)
 
 ### 1.6 [线程状态转换](https://blog.csdn.net/xingjing1226/article/details/81977129)
+
+![让优秀成为一种习惯！](images/1558778999583.png)
+![让优秀成为一种习惯！](images/1558779009921.png)
  
 中的wait(), notify()等函数，和synchronized一样，会对“对象的同步锁”进行操作。
 wait()会使“当前线程”等待，因为线程进入等待状态，所以线程应该释放它锁持有的“同步锁”，否则其它线程获取不到该“同步锁”而无法运行！
@@ -34,6 +37,7 @@ OK，线程调用wait()之后，会释放它锁持有的“同步锁”；而且
 
 ### 1.7	创建线程的方法
  
+![让优秀成为一种习惯！](images/1558779022407.png)
 
 ### 1.8	[守护线程(deamon属性)](https://blog.csdn.net/u010739551/article/details/51065923)
 
@@ -182,7 +186,7 @@ synchronized的缺陷：
 当获得锁的线程因等待I/O或sleep被阻塞时，其它线程只能一直等下去
 而Lock能让等待的线程响应中断
  
-
+ ![让优秀成为一种习惯！](images/1558779050817.png)
 
 ### 3.2 AbstractQueuedSynchronizer（重要）
 在java.util.concurrent.locks包中，作为提供一个框架，用于实现依赖先进先出（FIFO）等待队列的阻塞锁和相关同步器。
@@ -196,27 +200,36 @@ tryAcquire(1)：通过getState()获得状态（标志是否重入）,若为0,则
 acquire(1)返回false时（即不能获得锁，接下来应该阻塞并放入同步队列）,继续执行acquireQueued(addWaiter(Node.EXCLUSIVE), arg))—>此方法应该是放入同步队列，放入后在执行selfInterrupt();将线程设为阻塞。
 加入队列如下图：（采用自旋的方式进入队列，知道进入阻塞队列）
  
+ ![让优秀成为一种习惯！](images/1558779074784.png)
 
 其中一个方法有点奇妙：
 acquireQueued的主要作用是把已经追加到队列的线程节点（addWaiter方法返回值）进行阻塞，但阻塞前又通过tryAccquire重试是否能获得锁，如果重试成功能则无需阻塞，直接返回。
 
 下面是将结点加入同步队列的源码：
  
- 
+ ![让优秀成为一种习惯！](images/1558779101891.png)
+ ![让优秀成为一种习惯！](images/1558779112117.png)
+
 
 ### 3.3 公平锁
 参考前面的FairSync和UnfairSync同步器源码，主要区别就是在实现上多了一个判断hasQueuedPredecessors()：判断等待队列中有没有比当前请求线程更前的结点。（等待队列就是一个FIFO队列）
- 
+ ![让优秀成为一种习惯！](images/1558779118873.png)
 
 ### 3.4 读写锁
 
 我们通过分析ReentrantReadWriteLock源码来分析读写锁。
 注意：里面的锁的实现都是委托同步器实现的，而同步器又是通过继承AQS实现（AbstractQueuedSynchronized）实现，所以最终要的是看AQS中的tryAcquire()、tryAcqureiShared()、tryRelease()、tryReleaseShared()方法的实现
 
+![让优秀成为一种习惯！](images/1558779136894.png)
+![让优秀成为一种习惯！](images/1558779155498.png)
+
+
 前面的可重入锁用一个int值（state）来表示锁的状态，数值可以表示同一线程重入的次数，那对于读写锁，有几个状态需要解决：
+![让优秀成为一种习惯！](images/1558779145541.png)
 
 接下来，我们来读一下源码：
 #####获取写锁（排它锁）：
+![让优秀成为一种习惯！](images/1558779176657.png)
 int，16位，高16位表示读，低16位表示写状态（数值表示重入次数）
 首先getState()获取c（表示是否已被占有或是否第一次进来）
 若c==0，则compareAndSetState(c, c + acquires)，设置状态为1，再设置当前线程占用锁setExclusiveOwnerThread(current)；
@@ -224,6 +237,8 @@ int，16位，高16位表示读，低16位表示写状态（数值表示重入�
 否则设置状态setState(c + acquires)
 
 #####释放写锁（排它锁）：
+![让优秀成为一种习惯！](images/1558779206702.png)
+
 isHeldExclusively()判断当前线程是否独占这把锁，若不是，报错（若当前线程不是独占这把锁又怎么能释放它呢）。
 如果是，getState() – releases，再判断状态是否是0，若为0，则为线程执行完毕；若不是，则为线程之前重入，现在退出而已；
 
@@ -232,8 +247,10 @@ exclusiveCount(c) != 0 &&getExclusiveOwnerThread() != current
 上述若为真，表示资源已被线程获得写锁且非当前线程，获取读锁请求失败；
 readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c + SHARED_UNIT))更新c，
 当c==0，设拿到锁的线程为当前线程，并设重入数为1，firstReader = current;firstReaderHoldCount = 1;若firstReader == current，firstReaderHoldCount++;其他情况表示其他线程获取读锁，则使用HoldCounter计重入数
- 
+ ![让优秀成为一种习惯！](images/1558779218100.png)
+
 而HoldCounter是用ThreadLocal进行存储，保证安全性
+![让优秀成为一种习惯！](images/1558779226974.png)
 
 
 ### 3.5 锁降级和锁升级
@@ -257,7 +274,8 @@ readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c +
 
 
 ### 3.6 线程安全总结
- 
+ ![让优秀成为一种习惯！](images/1558779239016.png)
+
 	有什么锁？
 偏向锁
 轻量级锁
@@ -282,10 +300,12 @@ Condition：
 线程之间除了同步互斥，还要考虑通信。在Java5之前我们的通信方式为：wait 和 notify。Condition的优势是支持多路等待，即可以定义多个Condition，每个condition控制线程的一条执行通路。传统方式只能是一路等待
 Condition提供不同于Object 监视器方法的行为和语义，如受保证的通知排序，或者在执行通知时不需要保持一个锁。
 
-使用：
+使用:
+```
 Lock lock = new ReentrantLock();
 Condition ca = lock.newCondition();
-
+```
+```
 lock.lock();
 while(signal != 0){
     try {
@@ -299,15 +319,18 @@ System.out.println("a");
 signal ++;
 cb.signal();
 lock.unlock();
-
+```
 Condition是由ReentrantLock的newCondition()创建，而接着又是同步锁Sync的newCondition()产生，是一个ConditionObject类实例（Reentrant内部类），我们一般只用到await()和signal()方法，我们重点看这两个方法：
+
+![让优秀成为一种习惯！](images/1558779305685.png)
+
  
 await()方法是会释放锁的，若Thread.interrupted()==true,即线程被阻塞中，那即表示没有拥有锁，不能调用await()方法，抛出异常；
 Condition实例实质上被绑定到一个锁上。一个锁内部可以有多个Condition，即有多路等待和通知。
 则可以存在多个等待队列（注意区别线程结点的同步队列，等待队列的结点需要放在同步队列中抢占CPU
 时间片才能执行）。
 
-
+![让优秀成为一种习惯！](images/1558779317018.png)
  
 
 同步队列与条件队列：
@@ -325,6 +348,8 @@ Semaphore
 Idea有案例
 
 接着addConditionWaiter()添加到等待队列中 
+![让优秀成为一种习惯！](images/1558779348076.png)
+
 unlinkCancelledWaiters： 这个方法会遍历整个条件队列，然后会将已取消的所有节点清除出队列
 // 释放锁，返回值是释放锁之前的 state 值
 // await() 之前，当前线程是必须持有锁的，这里肯定要释放掉
@@ -357,11 +382,15 @@ Thread.join其实底层是通过wait/notifyall来实现线程的通信达到线�
 分析ThreadLocal的源码：
 首先我们主要关注其中的get()、set(T value)、setInitialValue()
 get():
+![让优秀成为一种习惯！](images/1558779396680.png)
  
 可以看出从ThreadLocalMap中获取Entry在取值，map的key为当前线程实例，value为Object;
 而ThreadLocalMap是Thread的一个属性，在getMap(t)中就返回Thread的ThreadLocalMap
- 
+ ![让优秀成为一种习惯！](images/1558779403711.png)
+
 set():
- 
+ ![让优秀成为一种习惯！](images/1558779407584.png)
+
 setInitialValue():
- 
+ ![让优秀成为一种习惯！](images/1558779412583.png)
+
