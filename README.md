@@ -232,7 +232,7 @@ acquireQueued的主要作用是把已经追加到队列的线程节点（addWait
 ![让优秀成为一种习惯！](images/1558779145541.png)
 
 接下来，我们来读一下源码：
-#####获取写锁（排它锁）：
+##### 获取写锁（排它锁）：
 
 ![让优秀成为一种习惯！](images/1558779176657.png)
 
@@ -242,14 +242,14 @@ int，16位，高16位表示读，低16位表示写状态（数值表示重入�
 若c!=0，比较写锁重入数w = exclusiveCount(c)，当c!=0且w==0时，即表示已有线程获取该对象读锁（shared count != 0），则当前线程获取写锁失败，return false；
 否则设置状态setState(c + acquires)
 
-#####释放写锁（排它锁）：
+##### 释放写锁（排它锁）：
 
 ![让优秀成为一种习惯！](images/1558779206702.png)
 
 isHeldExclusively()判断当前线程是否独占这把锁，若不是，报错（若当前线程不是独占这把锁又怎么能释放它呢）。
 如果是，getState() – releases，再判断状态是否是0，若为0，则为线程执行完毕；若不是，则为线程之前重入，现在退出而已；
 
-#####获取读锁（共享锁）：
+##### 获取读锁（共享锁）：
 exclusiveCount(c) != 0 &&getExclusiveOwnerThread() != current
 上述若为真，表示资源已被线程获得写锁且非当前线程，获取读锁请求失败；
 readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c + SHARED_UNIT))更新c，
