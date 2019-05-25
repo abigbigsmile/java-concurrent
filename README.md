@@ -213,6 +213,7 @@ acquireQueued的主要作用是把已经追加到队列的线程节点（addWait
 
 ### 3.3 公平锁
 参考前面的FairSync和UnfairSync同步器源码，主要区别就是在实现上多了一个判断hasQueuedPredecessors()：判断等待队列中有没有比当前请求线程更前的结点。（等待队列就是一个FIFO队列）
+
  ![让优秀成为一种习惯！](images/1558779118873.png)
 
 ### 3.4 读写锁
@@ -220,16 +221,21 @@ acquireQueued的主要作用是把已经追加到队列的线程节点（addWait
 我们通过分析ReentrantReadWriteLock源码来分析读写锁。
 注意：里面的锁的实现都是委托同步器实现的，而同步器又是通过继承AQS实现（AbstractQueuedSynchronized）实现，所以最终要的是看AQS中的tryAcquire()、tryAcqureiShared()、tryRelease()、tryReleaseShared()方法的实现
 
+
 ![让优秀成为一种习惯！](images/1558779136894.png)
+
 ![让优秀成为一种习惯！](images/1558779155498.png)
 
 
 前面的可重入锁用一个int值（state）来表示锁的状态，数值可以表示同一线程重入的次数，那对于读写锁，有几个状态需要解决：
+
 ![让优秀成为一种习惯！](images/1558779145541.png)
 
 接下来，我们来读一下源码：
 #####获取写锁（排它锁）：
+
 ![让优秀成为一种习惯！](images/1558779176657.png)
+
 int，16位，高16位表示读，低16位表示写状态（数值表示重入次数）
 首先getState()获取c（表示是否已被占有或是否第一次进来）
 若c==0，则compareAndSetState(c, c + acquires)，设置状态为1，再设置当前线程占用锁setExclusiveOwnerThread(current)；
@@ -237,6 +243,7 @@ int，16位，高16位表示读，低16位表示写状态（数值表示重入�
 否则设置状态setState(c + acquires)
 
 #####释放写锁（排它锁）：
+
 ![让优秀成为一种习惯！](images/1558779206702.png)
 
 isHeldExclusively()判断当前线程是否独占这把锁，若不是，报错（若当前线程不是独占这把锁又怎么能释放它呢）。
@@ -247,9 +254,11 @@ exclusiveCount(c) != 0 &&getExclusiveOwnerThread() != current
 上述若为真，表示资源已被线程获得写锁且非当前线程，获取读锁请求失败；
 readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c + SHARED_UNIT))更新c，
 当c==0，设拿到锁的线程为当前线程，并设重入数为1，firstReader = current;firstReaderHoldCount = 1;若firstReader == current，firstReaderHoldCount++;其他情况表示其他线程获取读锁，则使用HoldCounter计重入数
+
  ![让优秀成为一种习惯！](images/1558779218100.png)
 
 而HoldCounter是用ThreadLocal进行存储，保证安全性
+
 ![让优秀成为一种习惯！](images/1558779226974.png)
 
 
@@ -274,6 +283,7 @@ readerShouldBlock()：保证公平，若不被阻塞，compareAndSetState(c, c +
 
 
 ### 3.6 线程安全总结
+
  ![让优秀成为一种习惯！](images/1558779239016.png)
 
 	有什么锁？
@@ -382,15 +392,21 @@ Thread.join其实底层是通过wait/notifyall来实现线程的通信达到线�
 分析ThreadLocal的源码：
 首先我们主要关注其中的get()、set(T value)、setInitialValue()
 get():
+
 ![让优秀成为一种习惯！](images/1558779396680.png)
+
  
 可以看出从ThreadLocalMap中获取Entry在取值，map的key为当前线程实例，value为Object;
-而ThreadLocalMap是Thread的一个属性，在getMap(t)中就返回Thread的ThreadLocalMap
- ![让优秀成为一种习惯！](images/1558779403711.png)
+而ThreadLocalMap是Thread的一个属性，在getMap(t)中就返回Thread的ThreadLocalMap  
 
-set():
+![让优秀成为一种习惯！](images/1558779403711.png)
+
+set():  
+
  ![让优秀成为一种习惯！](images/1558779407584.png)
+ 
 
-setInitialValue():
- ![让优秀成为一种习惯！](images/1558779412583.png)
+setInitialValue():  
+
+![让优秀成为一种习惯！](images/1558779412583.png)
 
