@@ -83,7 +83,7 @@ https://blog.csdn.net/huangshulang1234/article/details/79158306
 ### 2.4 javap –verbose ***.class 反编译，查看class文件的字节码
 
 ### 2.5 synchronized原理和使用
-			https://www.cnblogs.com/paddix/p/5367116.html
+https://www.cnblogs.com/paddix/p/5367116.html
 
 内置锁（互斥）
 	修饰普通方法：作用域是某个对象实例，防止多个线程同时访问此对象中被synchronized修饰的方法，但是不同对象实例是不互相干预的；
