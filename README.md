@@ -406,3 +406,436 @@ setInitialValue():
 
 ![让优秀成为一种习惯！](images/1558779412583.png)
 
+### 4.2 Future源码解析
+Runnable : run()是被线程调用的，在run()中是异步执行的；
+Callable : call()是由Future的run方法调用的，不是异步执行的
+
+下面用我的语言叙述一次Future的执行过程：
+
+```
+//FutureTask实现RunnableFuture接口，而RunnableFuture继承了Runnable、Future接口
+FutureTask<Integer> task = new FutureTask<Integer>(new Callable_Thread());
+//task可以作为Thread的参数
+Thread t1 = new Thread(task);
+t1.start();
+//获取返回值
+Integer result = task.get();
+```
+
+如上面注释所说，FutureTask实际上是Runnable的子接口，所以可以作为Thread的参数，然后线程自动调用FutureTask实现的run().
+返回值其实是如何实现的呢？
+```
+public void run() {
+    if (state != NEW ||
+        !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                     null, Thread.currentThread()))
+        return;
+    try {
+        Callable<V> c = callable;
+        if (c != null && state == NEW) {
+            V result;
+            boolean ran;
+            try {
+                result = c.call();
+                ran = true;
+            } catch (Throwable ex) {
+                result = null;
+                ran = false;
+                setException(ex);
+            }
+            if (ran)
+                set(result);
+        }
+    } finally {
+        // runner must be non-null until state is settled to
+        // prevent concurrent calls to run()
+        runner = null;
+        // state must be re-read after nulling runner to prevent
+        // leaked interrupts
+        int s = state;
+        if (s >= INTERRUPTING)
+            handlePossibleCancellationInterrupt(s);
+    }
+}
+```
+可以看到，run()调用了callable的call(),返回结果
+```
+public FutureTask(Runnable runnable, V result) {
+    this.callable = Executors.callable(runnable, result);
+    this.state = NEW;       // ensure visibility of callable
+}
+
+public static <T> Callable<T> callable(Runnable task, T result) {
+    if (task == null)
+        throw new NullPointerException();
+    return new RunnableAdapter<T>(task, result);
+}
+
+static final class RunnableAdapter<T> implements Callable<T> {
+    final Runnable task;
+    final T result;
+    RunnableAdapter(Runnable task, T result) {
+        this.task = task;
+        this.result = result;
+    }
+    public T call() {
+        task.run();
+        return result;
+    }
+}
+```
+FutureTask有一个构造方法，传入Runnable类型实例，并将接受返回值的参数（泛型）传入；Executors.callable(runnable, result)返回一个RunnableAdapter(实现了Callable接口)，这里设计得很巧妙，实际上上面的call()调用RunnableAdapter的call()，然后运行Runnable类型对象的run(),返回result（相当于RunnableAdapter整合了Runnable和返回值功能）
+
+最后的get()是如何实现等到task的run()完成再返回值？
+```
+public V get() throws InterruptedException, ExecutionException {
+    int s = state;
+    if (s <= COMPLETING)
+        s = awaitDone(false, 0L);
+    return report(s);
+}
+```
+```
+private int awaitDone(boolean timed, long nanos)
+    throws InterruptedException {
+    final long deadline = timed ? System.nanoTime() + nanos : 0L;
+    WaitNode q = null;
+    boolean queued = false;
+    for (;;) {
+        if (Thread.interrupted()) {
+            removeWaiter(q);
+            throw new InterruptedException();
+        }
+
+        int s = state;
+        if (s > COMPLETING) {
+            if (q != null)
+                q.thread = null;
+            return s;
+        }
+        else if (s == COMPLETING) // cannot time out yet
+            Thread.yield();
+        else if (q == null)
+            q = new WaitNode();
+        else if (!queued)
+            queued = UNSAFE.compareAndSwapObject(this, waitersOffset,
+                                                 q.next = waiters, q);
+        else if (timed) {
+            nanos = deadline - System.nanoTime();
+            if (nanos <= 0L) {
+                removeWaiter(q);
+                return state;
+            }
+            LockSupport.parkNanos(this, nanos);
+        }
+        else
+            LockSupport.park(this);
+    }
+}
+```
+
+FutureTask使用state来表示状态，有一下几个状态：
+```
+private volatile int state;
+private static final int NEW          = 0;
+private static final int COMPLETING   = 1;
+private static final int NORMAL       = 2;
+private static final int EXCEPTIONAL  = 3;
+private static final int CANCELLED    = 4;
+private static final int INTERRUPTING = 5;
+private static final int INTERRUPTED  = 6;
+```  
+```
+* Possible state transitions:
+* NEW -> COMPLETING -> NORMAL
+* NEW -> COMPLETING -> EXCEPTIONAL
+* NEW -> CANCELLED
+* NEW -> INTERRUPTING -> INTERRUPTED  
+```
+
+由上面源码看出，当state<= COMPLETING,即未完成，进入awaitDone方法中，再次判断，当state> COMPLETING,返回状态state,调用report(state)方法;若其他情况，先生成结点WaitNode（包含线程和后继结点指针）加入链表中，然后挂起等待；
+上面的run()调用call()之后会返回result，然后调用FutureTask的set(result)方法把result放到outcome属性中（Object类型，如果发生异常，outcome就接收异常对象）
+```
+protected void set(V v) {
+    if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+        outcome = v;
+        UNSAFE.putOrderedInt(this, stateOffset, NORMAL); // final state
+        finishCompletion();
+    }
+}  
+```
+```
+private void finishCompletion() {
+    // assert state > COMPLETING;
+    for (WaitNode q; (q = waiters) != null;) {
+        if (UNSAFE.compareAndSwapObject(this, waitersOffset, q, null)) {
+            for (;;) {
+                Thread t = q.thread;
+                if (t != null) {
+                    q.thread = null;
+                    LockSupport.unpark(t);
+                }
+                WaitNode next = q.next;
+                if (next == null)
+                    break;
+                q.next = null; // unlink to help gc
+                q = next;
+            }
+            break;
+        }
+    }
+    done();
+    callable = null;        // to reduce footprint
+}  
+```
+
+将值放入outcome后就需要循环唤醒链表中所有的等待结点，然后之前挂起的线程继续执行，调用report(state)返回结果  
+```
+private V report(int s) throws ExecutionException {
+    Object x = outcome;
+    if (s == NORMAL)
+        return (V)x;
+    if (s >= CANCELLED)
+        throw new CancellationException();
+    throw new ExecutionException((Throwable)x);
+}  
+```
+根据state决定返回结果还是抛出异常
+
+总的来书，就是线程调用run(),run中执行call(),返回结果；若还没有结果就有线程取的话，就生成等待结点加入链表，set()完值后再唤醒链表中所有挂起的线程
+
+### 4.3 [ForkJoin框架详解](https://www.cnblogs.com/lixuwu/p/7979480.html)
+
+>ForkJoinPool的优势：可以充分利用多核CPU，通过发一个大任务分成多个小任务，然后通过多线程并行并发地执行任务，最后将结果合并。
+ForkJoinPool的优势在于，可以充分利用多cpu，多核cpu的优势，把一个任务拆分成多个“小任务”，把多个“小任务”放到多个处理器核心上并行执行；当多个“小任务”执行完成之后，再将这些执行结果合并起来即可。这种思想值得学习。  
+
+![让优秀成为一种习惯](images/1558863719405.png)
+
+ForkJoinTask的工作原理：
+http://blog.dyngr.com/blog/2016/09/15/java-forkjoinpool-internals/
+https://blog.csdn.net/niyuelin1990/article/details/78658251
+
+### 4.4 同步容器和并发容器
+
+Vector（线程安全，性能不高，在修改方法上加了synchronized）
+---> ArrayList（线程不安全，方法没有加synchronized，使用Collections.synchronizedList(list)进行线程安全化，原理是类似代理加锁，用SynchronizedList包装List
+---> CopyOnWriteArrayList（）,类似读写分离吧
+
+HashTable（线程安全）
+---> HashMap（线程不安去，Collections.synchronizedMap(map)）
+---> ConcurrentMap （不锁整个map表，实现分区域加锁）
+
+### 4.5 CopyOnWriteArray原理分析
+
+add(E d):
+```
+public boolean add(E e) {
+    final ReentrantLock lock = this.lock;
+    lock.lock();
+    try {
+        Object[] elements = getArray();
+        int len = elements.length;
+        Object[] newElements = Arrays.copyOf(elements, len + 1);
+        newElements[len] = e;
+        setArray(newElements);
+        return true;
+    } finally {
+        lock.unlock();
+    }
+}
+```
+在操作前先加ReentrantLock,然后获取原数组，原数组长度，接着复制原数组元素到新数组，长度+1，再添加新元素到新数组，最后把原数组引用指向新数组
+可以看出，这样性能是会降低的
+然后set(E e)和remove()也差不多
+
+### 4.3 ConcurrentLinkedQueue分析（非阻塞队列）
+
+这个结构的安全性如何来呢？
+注意：ConcurrentLinkedQueue全是采用的非阻塞算法，里面没有使用任何锁，全是基于CAS操作实现的。
+在操作结点时使用了以下一些cas操作（原子操作）：
+
+`p.casNext(null, newNode)`
+
+`p.casItem(item, null)`
+
+
+对一个队列来说，插入满足FIFO特性，插入元素总是在队列最末尾的地方进行插入，而取（移除）元素总是从队列的队头。所有要想能够彻底弄懂ConcurrentLinkedQueue自然而然是从offer方法和poll方法开始。
+
+差不多就是链表结构的增删改查
+不同的就是当在队列胃添加一个结点之后，不是马上将tail引用指向最后的结点，而是下一次添加时再判断进行添加；在队头删除结点时将head的下一结点数据（element）区域置null，head引用也不马上指向被置空结点  
+
+![让优秀成为一种习惯](images/1558863760873.png)
+  
+  ![让优秀成为一种习惯](images/1558863777884.png)
+
+
+### 4.4 LinkedBlockingQueue（阻塞队列）
+
+LinkedBlockingQueue是一个线程安全的阻塞队列，它实现了BlockingQueue接口，BlockingQueue接口继承自java.util.Queue接口，并在这个接口的基础上增加了take和put方法，这两个方法正是队列操作的阻塞版本。  
+
+```
+public void put(E e) throws InterruptedException {
+    if (e == null) throw new NullPointerException();
+    // Note: convention in all put/take/etc is to preset local var
+    // holding count negative to indicate failure unless set.
+    int c = -1;
+    Node<E> node = new Node<E>(e);
+    final ReentrantLock putLock = this.putLock;
+    final AtomicInteger count = this.count;
+    putLock.lockInterruptibly();
+    try {
+        /*
+         * Note that count is used in wait guard even though it is
+         * not protected by lock. This works because count can
+         * only decrease at this point (all other puts are shut
+         * out by lock), and we (or some other waiting put) are
+         * signalled if it ever changes from capacity. Similarly
+         * for all other uses of count in other wait guards.
+         */
+        while (count.get() == capacity) {
+            notFull.await();
+        }
+        enqueue(node);
+        c = count.getAndIncrement();
+        if (c + 1 < capacity)
+            notFull.signal();
+    } finally {
+        putLock.unlock();
+    }
+    if (c == 0)
+        signalNotEmpty();
+}  
+```
+```
+public E take() throws InterruptedException {
+    E x;
+    int c = -1;
+    final AtomicInteger count = this.count;
+    final ReentrantLock takeLock = this.takeLock;
+    takeLock.lockInterruptibly();
+    try {
+        while (count.get() == 0) {
+            notEmpty.await();
+        }
+        x = dequeue();
+        c = count.getAndDecrement();
+        if (c > 1)
+            notEmpty.signal();
+    } finally {
+        takeLock.unlock();
+    }
+    if (c == capacity)
+        signalNotFull();
+    return x;
+}  
+```
+
+原理：通过一个可重入锁ReentrantLock和两个Condition条件对象来实现阻塞。有notFull和notEmpty两个条件对象，LinkedBlockingQueue构造方法可以传入最大结点数，当添加时（put），若队列数已经达到最大结点数，则会调用notFull.await()，只有等到调用take()从队列移除后，才会调用notFull.notify();当移除时，队列结点数==0时，调用notEmpty.await()方法，知道添加再唤醒
+
+可以用于生产者消费者案例中
+随便补充一点：尽量使用**.isEmpty()代替**.size()>0
+
+### 4.5 [消息队列](https://blog.csdn.net/HEYUTAO007/article/details/50131089)
+
+** JMS（Java Message Service）规范目前支持两种消息模型：点对点（point to point， queue）和发布/订阅（publish/subscribe，topic）。 **
+
+>点对点：Queue，不可重复消费
+消息生产者生产消息发送到queue中，然后消息消费者从queue中取出并且消费消息。
+消息被消费以后，queue中不再有存储，所以消息消费者不可能消费到已经被消费的消息。Queue支持存在多个消费者，但是对一个消息而言，只会有一个消费者可以消费。  
+  
+  ![让优秀成为一种习惯](images/1558863881592.png)
+
+
+>发布/订阅：Topic，可以重复消费
+消息生产者（发布）将消息发布到topic中，同时有多个消息消费者（订阅）消费该消息。和点对点方式不同，发布到topic的消息会被所有订阅者消费。
+
+![让优秀成为一种习惯](images/1558863901401.png)
+ 
+>支持订阅组的发布订阅模式：
+发布订阅模式下，当发布者消息量很大时，显然单个订阅者的处理能力是不足的。实际上现实场景中是多个订阅者节点组成一个订阅组负载均衡消费topic消息即分组订阅，这样订阅者很容易实现消费能力线性扩展。可以看成是一个topic下有多个Queue，每个Queue是点对点的方式，Queue之间是发布订阅方式。
+ 
+ ![让优秀成为一种习惯](images/1558863909788.png)
+
+**流行模型比较**
+传统企业型消息队列ActiveMQ遵循了JMS规范，实现了点对点和发布订阅模型，但其他流行的消息队列RabbitMQ、Kafka并没有遵循JMS规范。
+
+>消息队列的应用场景：
+个人认为消息队列的主要特点是异步处理，主要目的是减少请求响应时间和解耦。所以主要的使用场景就是将比较耗时而且不需要即时（同步）返回结果的操作作为消息放入消息队列。
+	
+	使用场景的话，举个例子：
+	假设用户在你的软件中注册，服务端收到用户的注册请求后，它会做这些操作：
+	校验用户名等信息，如果没问题会在数据库中添加一个用户记录
+	如果是用邮箱注册会给你发送一封注册成功的邮件，手机注册则会发送一条短信
+	分析用户的个人信息，以便将来向他推荐一些志同道合的人，或向那些人推荐他
+	发送给用户一个包含操作指南的系统通知
+	等等……
+但是对于用户来说，注册功能实际只需要第一步，只要服务端将他的账户信息存到数据库中他便可以登录上去做他想做的事情了。至于其他的事情，非要在这一次请求中全部完成么？值得用户浪费时间等你处理这些对他来说无关紧要的事情么？所以实际当第一步做完后，服务端就可以把其他的操作放入对应的消息队列中然后马上返回用户结果，由消息队列异步的进行这些操作。
+
+或者还有一种情况，同时有大量用户注册你的软件，再高并发情况下注册请求开始出现一些问题，例如邮件接口承受不住，或是分析信息时的大量计算使cpu满载，这将会出现虽然用户数据记录很快的添加到数据库中了，但是却卡在发邮件或分析信息时的情况，导致请求的响应时间大幅增长，甚至出现超时，这就有点不划算了。面对这种情况一般也是将这些操作放入消息队列（生产者消费者模型），消息队列慢慢的进行处理，同时可以很快的完成注册请求，不会影响用户使用其他功能。
+
+
+### 4.6 ConcurrentHashMap结构分析 （用分离锁实现多个线程的并发写操作）
+https://www.ibm.com/developerworks/cn/java/java-lo-concurrenthashmap/index.html
+#### 重排序  
+
+>内存模型描述了程序的可能行为。具体的编译器实现可以产生任意它喜欢的代码 -- 只要所有执行这些代码产生的结果，能够和内存模型预测的结果保持一致。这为编译器实现者提供了很大的自由，包括操作的重排序。
+编译器生成指令的次序，可以不同于源代码所暗示的“显然”版本。重排序后的指令，对于优化执行以及成熟的全局寄存器分配算法的使用，都是大有脾益的，它使得程序在计算性能上有了很大的提升。
+重排序类型包括：
+•	编译器生成指令的次序，可以不同于源代码所暗示的“显然”版本。
+•	处理器可以乱序或者并行的执行指令。
+•	缓存会改变写入提交到主内存的变量的次序。
+#### 内存可见性  
+
+>由于现代可共享内存的多处理器架构可能导致一个线程无法马上（甚至永远）看到另一个线程操作产生的结果。所以 Java 内存模型规定了 JVM 的一种最小保证：什么时候写入一个变量对其他线程可见。
+在现代可共享内存的多处理器体系结构中每个处理器都有自己的缓存，并周期性的与主内存协调一致。假设线程 A 写入一个变量值 V，随后另一个线程 B 读取变量 V 的值，在下列情况下，线程 B 读取的值可能不是线程 A 写入的最新值：
+•	执行线程 A 的处理器把变量 V 缓存到寄存器中。
+•	执行线程 A 的处理器把变量 V 缓存到自己的缓存中，但还没有同步刷新到主内存中去。
+•	执行线程 B 的处理器的缓存中有变量 V 的旧值。  
+
+#### Happens-before 关系  
+
+>happens-before 关系保证：如果线程 A 与线程 B 满足 happens-before 关系，则线程 A 执行动作的结果对于线程 B 是可见的。如果两个操作未按 happens-before 排序，JVM 将可以对他们任意重排序。
+下面介绍几个与理解 ConcurrentHashMap 有关的 happens-before 关系法则：
+1.	程序次序法则：如果在程序中，所有动作 A 出现在动作 B 之前，则线程中的每动作 A 都 happens-before 于该线程中的每一个动作 B。
+2.	监视器锁法则：对一个监视器的解锁 happens-before 于每个后续对同一监视器的加锁。
+3.	Volatile 变量法则：对 Volatile 域的写入操作 happens-before 于每个后续对同一 Volatile 的读操作。
+4.	传递性：如果 A happens-before 于 B，且 B happens-before C，则 A happens-before C。  
+  
+  
+ **ConcurrentHashMap的结构**
+ConcurrentHashMap 类中包含两个静态内部类 HashEntry 和 Segment。HashEntry 用来封装映射表的键 / 值对；Segment 用来充当锁的角色，每个 Segment 对象守护整个散列映射表的若干个桶。每个桶是由若干个 HashEntry 对象链接起来的链表。一个 ConcurrentHashMap 实例中包含由若干个 Segment 对象组成的数组。
+
+ConcurrentHashMap 在默认并发级别会创建包含 16 个 Segment 对象的数组。每个 Segment 的成员对象 table 包含若干个散列表的桶。每个桶是由 HashEntry 链接起来的一个链表。如果键能均匀散列，每个 Segment 大约守护整个散列表中桶总数的 1/16。
+
+![让优秀成为一种习惯](images/1558863929532.png)
+ 
+插入三个节点后桶的结构示意图：
+ 
+ ![让优秀成为一种习惯](images/1558863936253.png)
+
+用 HashEntery 对象的不变性来降低读操作对加锁的需求
+在代码清单“HashEntry 类的定义”中我们可以看到，HashEntry 中的 key，hash，next 都声明为 final 型。这意味着，不能把节点添加到链接的中间和尾部，也不能在链接的中间和尾部删除节点。这个特性可以保证：在访问某个节点时，这个节点之后的链接不会被改变。这个特性可以大大降低处理链表时的复杂性。
+同时，HashEntry 类的 value 域被声明为 Volatile 型，Java 的内存模型可以保证：某个写线程对 value 域的写入马上可以被后续的某个读线程“看”到。在 ConcurrentHashMap 中，不允许用 unll 作为键和值，当读线程读到某个 HashEntry 的 value 域的值为 null 时，便知道产生了冲突——发生了重排序现象，需要加锁后重新读入这个 value 值。这些特性互相配合，使得读线程即使在不加锁状态下，也能正确访问 ConcurrentHashMap。
+“在 Segment 中执行具体的 put 操作”中，我们可以看出：put 操作如果需要插入一个新节点到链表中时 , 会在链表头部插入这个新节点。此时，链表中的原有节点的链接并没有被修改。也就是说：插入新健 / 值对到链表中的操作不会影响读线程正常遍历这个链表。
+
+和 get 操作一样，首先根据散列码找到具体的链表；然后遍历这个链表找到要删除的节点；最后把待删除节点之后的所有节点原样保留在新链表中，把待删除节点之前的每个节点克隆到新链表中。下面通过图例来说明 remove 操作。假设写线程执行 remove 操作，要删除链表的 C 节点，另一个读线程同时正在遍历这个链表。
+执行删除之前的原链表：
+ 
+ ![让优秀成为一种习惯](images/1558863947112.png)
+
+执行删除之后的新链表
+ 
+ ![让优秀成为一种习惯](images/1558863951959.png)
+
+**总结**
+ConcurrentHashMap 是一个并发散列映射表的实现，它允许完全并发的读取，并且支持给定数量的并发更新。相比于 HashTable 和用同步包装器包装的 HashMap（Collections.synchronizedMap(new HashMap())），ConcurrentHashMap 拥有更高的并发性。在 HashTable 和由同步包装器包装的 HashMap 中，使用一个全局的锁来同步不同线程间的并发访问。同一时间点，只能有一个线程持有锁，也就是说在同一时间点，只能有一个线程能访问容器。这虽然保证多线程间的安全并发访问，但同时也导致对容器的访问变成串行化的了。
+在使用锁来协调多线程间并发访问的模式下，减小对锁的竞争可以有效提高并发性。有两种方式可以减小对锁的竞争：  
+
+	1.	减小请求同一个锁的频率。
+	2.	减少持有锁的 时间。  
+	
+ConcurrentHashMap 的高并发性主要来自于三个方面：  
+
+	1.	用分离锁实现多个线程间的更深层次的共享访问。
+	2.	用 HashEntery 对象的不变性来降低执行读操作的线程在遍历链表期间对加锁的需求。
+	3.	通过对同一个 Volatile 变量的写 / 读访问，协调不同线程间读 / 写操作的内存可见性。
