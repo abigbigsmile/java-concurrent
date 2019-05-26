@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b922eb7e-a0ba-4f77-8a55-f2b228685172" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/simulate_future/Cake.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/simulate_future/Future.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/simulate_future/FutureFactory$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/simulate_future/FutureFactory.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/simulate_future/Main.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/util/ForkJoin.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/smile/thread/simulate_future/Cake.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/smile/thread/simulate_future/Future.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/smile/thread/simulate_future/FutureFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/smile/thread/simulate_future/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/com/smile/thread/util/ForkJoin.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/并发.docx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/createThread/Callable_Thread.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/java_concurrency/com/smile/thread/createThread/Callable_Thread.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/smile/thread/createThread/Callable_Thread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/smile/thread/createThread/Callable_Thread.java" afterDir="false" />
-    </list>
+    <list default="true" id="b922eb7e-a0ba-4f77-8a55-f2b228685172" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,17 +10,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="true">
-        <entry file="jar://C:/Program Files/Java/jdk1.8.0_144/src.zip!/java/util/concurrent/ConcurrentHashMap.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="410">
-              <caret line="1375" column="7" lean-forward="true" selection-start-line="1375" selection-start-column="7" selection-end-line="1375" selection-end-column="7" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -148,17 +121,7 @@
     </navigator>
     <panes>
       <pane id="PackagesPane" />
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="java_concurrency" type="b2602c69:ProjectViewProjectNode" />
-              <item name="java_concurrency" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
+      <pane id="ProjectPane" />
       <pane id="Scope" />
     </panes>
   </component>
@@ -171,6 +134,11 @@
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\IDEAworkspace\java_concurrency" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -285,19 +253,18 @@
       <workItem from="1558785816988" duration="6554000" />
       <workItem from="1558834358199" duration="7470000" />
       <workItem from="1558845886577" duration="2038000" />
-      <workItem from="1558859377513" duration="1486000" />
+      <workItem from="1558859377513" duration="2089000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="94056000" />
+    <option name="totallyTimeSpent" value="94659000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.40130153" visible="true" weight="0.19402985" />
-      <window_info id="Structure" order="1" sideWeight="0.5986985" side_tool="true" visible="true" weight="0.19402985" />
+      <window_info id="Structure" order="1" sideWeight="0.5986985" side_tool="true" weight="0.19402985" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
       <window_info id="UI Designer" order="4" />
