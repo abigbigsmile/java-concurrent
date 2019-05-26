@@ -15,11 +15,15 @@ public class Callable_Thread implements Callable<Integer> {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
 
-        //FutureTask实现RunnableFuture，而RunnableFuture实现了Runnable接口
+        //FutureTask实现RunnableFuture，而RunnableFuture实现了Runnable、Future接口
         FutureTask<Integer> task = new FutureTask<Integer>(new Callable_Thread());
         //task可以作为Thread的参数
         Thread t1 = new Thread(task);
+        Thread t2 = new Thread(task);
+        Thread t3 = new Thread(task);
         t1.start();
+        t2.start();
+        t3.start();
         //获取返回值
         Integer result = task.get();
         System.out.println("Callable_Thread返回值：" + result);
