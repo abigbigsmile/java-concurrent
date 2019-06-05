@@ -5,8 +5,20 @@ public class Sychronized_ordinary{
 
     public synchronized void method1() throws InterruptedException {
         System.out.println(Thread.currentThread().getName()+": method-1 begin .");
-        Thread.sleep(100);
+        Thread.sleep(1000);
         System.out.println(Thread.currentThread().getName()+": method-1 end ");
+    }
+
+    public void method2(){
+        synchronized (Sychronized_ordinary.class){
+            try {
+                System.out.println(Thread.currentThread().getName() + "进入静态代码块……");
+                Thread.sleep(2000);
+                System.out.println(Thread.currentThread().getName() + "释放……");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -43,12 +55,28 @@ public class Sychronized_ordinary{
                 }
             }
         });
-        t1.start();
-        t2.start();
-        t3.start();
-        t1.join();
-        t2.join();
-        t3.join();
+        Thread t4 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ordinary.method2();
+            }
+        });
+        Thread t5 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ordinary1.method2();
+            }
+        });
+
+
+//        t1.start();
+//        t2.start();
+//        t3.start();
+          t4.start();
+          t5.start();
+//        t1.join();
+//        t2.join();
+//        t3.join();
 
     }
 }
